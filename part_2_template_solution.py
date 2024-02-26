@@ -4,6 +4,14 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Any
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score, ShuffleSplit
+import utils as u
+# Any other imports you need
+
 
 # ======================================================================
 
@@ -42,6 +50,7 @@ class Section2:
         print out the number of classes for both training and testing datasets. 
     """
 
+
     def partA(
         self,
     ) -> tuple[
@@ -51,26 +60,24 @@ class Section2:
         NDArray[np.floating],
         NDArray[np.int32],
     ]:
+        Xtrain, ytrain, Xtest, ytest = u.prepare_data()
+        
         answer = {}
-        # Enter your code and fill the `answer`` dictionary
-
-        # `answer` is a dictionary with the following keys:
-        # - nb_classes_train: number of classes in the training set
-        # - nb_classes_test: number of classes in the testing set
-        # - class_count_train: number of elements in each class in the training set
-        # - class_count_test: number of elements in each class in the testing set
-        # - length_Xtrain: number of elements in the training set
-        # - length_Xtest: number of elements in the testing set
-        # - length_ytrain: number of labels in the training set
-        # - length_ytest: number of labels in the testing set
-        # - max_Xtrain: maximum value in the training set
-        # - max_Xtest: maximum value in the testing set
-
-        # return values:
-        # Xtrain, ytrain, Xtest, ytest: the data used to fill the `answer`` dictionary
-
-        Xtrain = Xtest = np.zeros([1, 1], dtype="float")
-        ytrain = ytest = np.zeros([1], dtype="int")
+        answer["nb_classes_train"] = len(np.unique(ytrain))
+        answer["nb_classes_test"] = len(np.unique(ytest))
+        answer["class_count_train"] = np.bincount(ytrain)
+        answer["class_count_test"] = np.bincount(ytest)
+        answer["length_Xtrain"] = Xtrain.shape[0]
+        answer["length_Xtest"] = Xtest.shape[0]
+        answer["length_ytrain"] = len(ytrain)
+        answer["length_ytest"] = len(ytest)
+        answer["max_Xtrain"] = np.max(Xtrain)
+        answer["max_Xtest"] = np.max(Xtest)
+        
+        """Xtrain = Xtest = np.zeros([1, 1], dtype="float")
+        ytrain = ytest = np.zeros([1], dtype="int")"""
+        
+        
 
         return answer, Xtrain, ytrain, Xtest, ytest
 
@@ -90,33 +97,49 @@ class Section2:
         ytest = y[ntrain:ntrain+test]
     """
 
-    def partB(
-        self,
-        X: NDArray[np.floating],
-        y: NDArray[np.int32],
-        Xtest: NDArray[np.floating],
-        ytest: NDArray[np.int32],
-        ntrain_list: list[int] = [],
-        ntest_list: list[int] = [],
-    ) -> dict[int, dict[str, Any]]:
-        """ """
-        # Enter your code and fill the `answer`` dictionary
-        answer = {}
 
-        """
-        `answer` is a dictionary with the following keys:
-           - 1000, 5000, 10000: each key is the number of training samples
+    def partB(self, input_X, input_y, train_sizes=[1000, 5000, 10000], test_sizes=[200, 1000, 2000]):
+    result_dict = {}
 
-           answer[k] is itself a dictionary with the following keys
-            - "partC": dictionary returned by partC section 1
-            - "partD": dictionary returned by partD section 1
-            - "partF": dictionary returned by partF section 1
-            - "ntrain": number of training samples
-            - "ntest": number of test samples
-            - "class_count_train": number of elements in each class in
-                               the training set (a list, not a numpy array)
-            - "class_count_test": number of elements in each class in
-                               the training set (a list, not a numpy array)
-        """
+        for train_size, test_size in zip(train_sizes, test_sizes):
+            # Extract a subset of the dataset
+            X_train_subset = input_X[:train_size]
+            y_train_subset = input_y[:train_size]
+            X_test_subset = input_X[train_size:train_size + test_size]
+            y_test_subset = input_y[train_size:train_size + test_size]
 
-        return answer
+            # Instantiate a logistic regression model
+            classifier = LogisticRegression(max_iter=300, solver='lbfgs', multi_class='multinomial', random_state=self.seed)
+
+            # Train the model
+            classifier.fit(X_train_subset, y_train_subset)
+
+            # Cross-validation using ShuffleSplit for training data
+            cv_splitter = ShuffleSplit(n_splits=5, test_size=0.2, random_state=self.seed)
+            cross_val_scores = cross_val_score(classifier, X_train_subset, y_train_subset, cv=cv_splitter)
+
+            # Training and testing scores
+            train_accuracy = classifier.score(X_train_subset, y_train_subset)
+            test_accuracy = classifier.score(X_test_subset, y_test_subset)
+
+            # Class distribution in training and testing sets
+            unique_classes, train_class_counts = np.unique(y_train_subset, return_counts=True)
+            _, test_class_counts = np.unique(y_test_subset, return_counts=True)
+
+            # Populate the result dictionary
+            answer[ntrain] = {
+                "ntrain": train_size,
+                "ntest": test_size,
+                "class_count_train": train_class_counts.tolist(),
+                "class_count_test": test_class_counts.tolist(),
+                "mean_cv_score": np.mean(cross_val_scores),
+                "std_cv_score": np.std(cross_val_scores),
+                "train_score": train_accuracy,
+                "test_score": test_accuracy,
+            }
+
+        return result_dict
+
+
+
+ 
