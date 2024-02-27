@@ -197,9 +197,6 @@ class Section3:
         Xtest: NDArray[np.floating],
         ytest: NDArray[np.int32],
     ) -> dict[str, Any]:
-        """"""
-        # print()
-        # print('Part C')
         answer={}
         clf=SVC(random_state=self.seed,kernel='linear')
         cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=self.seed)
@@ -331,8 +328,4 @@ class Section3:
 
         Recall: The scores are based on the results of the cross-validation step
         """
-        # print('*'*30)
-        # print('Part D answer')
-        # print('*'*30)
-        # print(answer)
         return answer
