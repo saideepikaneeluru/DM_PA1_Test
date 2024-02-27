@@ -67,7 +67,6 @@ class Section1:
     """
 
     def partA(self):
-        # Return 0 (ran ok) or -1 (did not run ok)
         answer = u.starter_code()
         return answer
 
@@ -494,5 +493,4 @@ class Section1:
             "accuracy_best_full_testing"
                
         """
-        # The mean accuracy of Cross validation is around 65% where as when the model trained on the enitre set, It has an 100% acccuracy, So it is higher than that of the mean accuracy of CV.
         return answer
